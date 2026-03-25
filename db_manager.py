@@ -19,35 +19,43 @@ def save_data(file_path, data):
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-def add_or_update_store(store_id, name, lat, long, zone, route):
+def add_or_update_store(store_id, name, lat, long, zone, route, store_class=None, phone=None, address=None):
     stores = load_data(STORES_FILE)
     store_found = False
     for store in stores:
-        if store['id'] == store_id:
-            store.update({
+        if str(store['id']) == str(store_id):
+            update_data = {
                 'name': name,
                 'lat': lat,
                 'long': long,
                 'zone': zone,
                 'route': route,
                 'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            })
+            }
+            if store_class: update_data['class'] = store_class
+            if phone: update_data['phone'] = phone
+            if address: update_data['address'] = address
+            
+            store.update(update_data)
             store_found = True
             break
     
     if not store_found:
         stores.append({
-            'id': store_id,
+            'id': str(store_id),
             'name': name,
             'lat': lat,
             'long': long,
             'zone': zone,
             'route': route,
+            'class': store_class if store_class else 'N/A',
+            'phone': phone if phone else 'N/A',
+            'address': address if address else 'N/A',
             'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         })
     
     save_data(STORES_FILE, stores)
-    return f"อัปเดตข้อมูลร้าน {name} เรียบร้อยแล้ว"
+    return f"อัปเดตข้อมูลร้าน {name} (ID: {store_id}) เรียบร้อยแล้ว"
 
 def add_inventory_item(store_id, product_name, quantity, seller_name):
     inventory = load_data(INVENTORY_FILE)
@@ -56,7 +64,7 @@ def add_inventory_item(store_id, product_name, quantity, seller_name):
     
     item = {
         'id': f"INV_{int(now.timestamp())}",
-        'store_id': store_id,
+        'store_id': str(store_id),
         'product_name': product_name,
         'quantity': quantity,
         'seller_name': seller_name,
@@ -79,7 +87,6 @@ def cleanup_expired_items():
     return "ไม่มีสินค้าหมดอายุ"
 
 if __name__ == "__main__":
-    # ตัวอย่างการใช้งาน (สามารถเรียกผ่าน CLI ได้)
     import sys
     if len(sys.argv) > 1:
         cmd = sys.argv[1]
