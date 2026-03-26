@@ -1,0 +1,31 @@
+name: Daily Inventory Cleanup
+
+on:
+  schedule:
+    # รันทุกวันเวลาเที่ยงคืน UTC (ประมาณ 7 โมงเช้าเวลาไทย)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # อนุญาตให้กดรันแบบ manual ได้
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+        
+    - name: Run cleanup script
+      run: python db_manager.py cleanup
+      
+    - name: Commit and push changes
+      run: |
+        git config --global user.name 'GitHub Action Bot'
+        git config --global user.email 'action@github.com'
+        git add data/inventory.json
+        # ตรวจสอบว่ามีการเปลี่ยนแปลงหรือไม่ก่อนทำการ commit
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-cleanup: Removed expired inventory items" && git push)
